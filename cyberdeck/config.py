@@ -38,5 +38,5 @@ class State:
 # UI Settings
 FPS = 30
 RES_SPI = (480, 320)
-RES_HDMI = (854, 480)
+RES_HDMI = (800, 480)
 RESOLUTION = RES_HDMI # Default to HDMI/DSI res
