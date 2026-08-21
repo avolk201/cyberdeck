@@ -1,5 +1,4 @@
 pygame
-luma.oled
 rpi_ws281x
 gpiozero
 pyserial
