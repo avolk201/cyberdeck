@@ -1,15 +1,16 @@
 [Unit]
-Description=Cyberdeck OS Kiosk
-After=network.target graphical.target plymouth-quit-wait.service
+Description=Cyberdeck OS X11 Kiosk
+After=network.target graphical.target plymouth-quit-wait.service systemd-user-sessions.service
 
 [Service]
 Type=simple
 User=alana
 WorkingDirectory=/home/alana/cyberdeck
-# Use KMSDRM to render directly to screen without a window manager
-Environment="SDL_VIDEODRIVER=kmsdrm"
+# Use a lightweight X11 server to host Pygame
+Environment="DISPLAY=:0"
 Environment="SDL_AUDIODRIVER=alsa"
-ExecStart=/usr/bin/python3 -m cyberdeck.main
+# Start X server without a cursor, and run our python script
+ExecStart=/usr/bin/xinit /usr/bin/python3 -m cyberdeck.main -- :0 -nocursor -s 0 dpms
 Restart=on-failure
 RestartSec=5
 # Ensure the user has hardware access groups

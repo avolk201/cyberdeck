@@ -1,12 +1,12 @@
 import os
 import sys
-import pygame
 
 # Detect if we are running without a window manager (e.g., at boot, via systemd, or SSH)
 if not os.environ.get("DISPLAY") and not os.environ.get("WAYLAND_DISPLAY"):
     print("No display environment variable found. Defaulting to KMSDRM for direct rendering.")
     os.environ.setdefault("SDL_VIDEODRIVER", "kmsdrm")
 
+import pygame
 from .config import RESOLUTION, FPS, State
 from .fsm import CyberdeckFSM
 from .hw.pixels import PixelController
@@ -55,6 +55,32 @@ class GestureRecognizer:
             elif abs(dx) < 10 and abs(dy) < 10:
                 self.on_tap(click_pos)
 
+def init_display():
+    pygame.font.init()
+    if os.environ.get("SDL_VIDEODRIVER") == "kmsdrm":
+        cards = ['/dev/dri/card0', '/dev/dri/card1', '/dev/dri/card2']
+        for card in cards:
+            if os.path.exists(card):
+                print(f"Trying DRM card: {card}")
+                os.environ["SDL_KMSDRM_DRM_CARD"] = card
+                try:
+                    pygame.display.init()
+                    screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+                    print(f"Success on {card}")
+                    return screen
+                except pygame.error as e:
+                    print(f"Failed on {card}: {e}")
+                    pygame.display.quit()
+    
+    # Fallback if not KMSDRM or all cards failed
+    print("Falling back to default display initialization...")
+    pygame.display.init()
+    try:
+        return pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+    except pygame.error:
+        print("FULLSCREEN failed. Trying windowed mode.")
+        return pygame.display.set_mode(RESOLUTION)
+
 def main():
     try:
         pygame.init()
@@ -67,8 +93,7 @@ def main():
         else:
             raise
 
-    pygame.font.init()
-    screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+    screen = init_display()
     pygame.display.set_caption("Cyberdeck OS")
     clock = pygame.time.Clock()
 
