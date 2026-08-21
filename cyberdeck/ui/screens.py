@@ -17,8 +17,6 @@ class BaseScreen:
         self.surface.fill((0,0,0))
     def update(self):
         pass
-    def handle_tap(self, pos):
-        pass
 
 class BootScreen(BaseScreen):
     def __init__(self, surface):
