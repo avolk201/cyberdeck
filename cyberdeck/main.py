@@ -1,6 +1,10 @@
 import os
 import sys
 
+# Synthesize mouse events from touch inputs (crucial for X11 kiosks)
+os.environ.setdefault("SDL_MOUSE_TOUCH_EVENTS", "1")
+os.environ.setdefault("SDL_TOUCH_MOUSE_EVENTS", "1")
+
 # Detect if we are running without a window manager (e.g., at boot, via systemd, or SSH)
 if not os.environ.get("DISPLAY") and not os.environ.get("WAYLAND_DISPLAY"):
     print("No display environment variable found. Defaulting to KMSDRM for direct rendering.")
