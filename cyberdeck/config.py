@@ -39,4 +39,4 @@ class State:
 FPS = 30
 RES_SPI = (480, 320)
 RES_HDMI = (854, 480)
-RESOLUTION = RES_SPI # Default to 3.5" SPI res
+RESOLUTION = RES_HDMI # Default to HDMI/DSI res
