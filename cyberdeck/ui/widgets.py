@@ -83,7 +83,7 @@ class NetMap:
         else:
             is_hostile = False if initial else (random.randint(1, 10) == 1)
         if is_hostile:
-            dr = random.uniform(-0.05, -0.1)
+            dr = random.uniform(-0.25, -0.5)
             
         alpha = 0 if not initial else random.randint(50, 255)
         self.blips.append({
@@ -167,10 +167,10 @@ class NetMap:
                 blip["rendered_dist"] = blip["dist"]
                 
             if blip["hostile"]:
-                blip["dr"] += random.uniform(-0.005, 0.005)
-                blip["dtheta"] += random.uniform(-0.001, 0.001)
-                blip["dr"] = max(-0.05, min(-0.01, blip["dr"]))
-                blip["dtheta"] = max(-0.001, min(0.001, blip["dtheta"]))
+                blip["dr"] += random.uniform(-0.025, 0.025)
+                blip["dtheta"] += random.uniform(-0.005, 0.005)
+                blip["dr"] = max(-0.25, min(-0.05, blip["dr"]))
+                blip["dtheta"] = max(-0.005, min(0.005, blip["dtheta"]))
                     
                 blip["dist"] += blip["dr"]
                 blip["angle"] = (blip["angle"] + blip["dtheta"]) % (2 * math.pi)
