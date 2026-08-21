@@ -51,7 +51,7 @@ class GestureRecognizer:
 def main():
     pygame.init()
     pygame.font.init()
-    screen = pygame.display.set_mode(RESOLUTION, pygame.FULLSCREEN)
+    screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
     pygame.display.set_caption("Cyberdeck OS")
     clock = pygame.time.Clock()
 
