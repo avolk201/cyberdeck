@@ -6,15 +6,20 @@ After=network.target graphical.target plymouth-quit-wait.service systemd-user-se
 Type=simple
 User=alana
 WorkingDirectory=/home/alana/cyberdeck
-# Use a lightweight X11 server to host Pygame
 Environment="DISPLAY=:0"
 Environment="SDL_AUDIODRIVER=alsa"
-# Start X server without a cursor, and run our python script
-ExecStart=/usr/bin/xinit /usr/bin/python3 -m cyberdeck.main -- :0 -nocursor -s 0 dpms
+# Start X server on VT7 without a cursor
+ExecStart=/usr/bin/xinit /usr/bin/python3 -m cyberdeck.main -- :0 vt7 -nocursor -s 0 dpms
 Restart=on-failure
 RestartSec=5
-# Ensure the user has hardware access groups
 SupplementaryGroups=tty video input dialout gpio i2c
+
+# Required for X11 to access virtual terminal without root
+StandardInput=tty
+TTYPath=/dev/tty7
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
 
 [Install]
 WantedBy=multi-user.target
