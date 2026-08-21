@@ -1,4 +1,3 @@
 pygame
-rpi_ws281x
 gpiozero
 pyserial
