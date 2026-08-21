@@ -215,6 +215,29 @@ class TelemetryGauges:
         self.target_load = 0.5
         self.last_update = 0
         
+        btn_w = 260
+        btn_h = 50
+        self.shutdown_btn = pygame.Rect(
+            self.rect.x + self.rect.width//2 - btn_w//2,
+            self.rect.bottom - btn_h - 20,
+            btn_w, btn_h
+        )
+        self.confirm_shutdown = False
+        self.confirm_time = 0
+        
+    def handle_tap(self, pos):
+        if self.shutdown_btn.collidepoint(pos):
+            if not self.confirm_shutdown:
+                self.confirm_shutdown = True
+                self.confirm_time = time.time()
+            else:
+                if time.time() - self.confirm_time < 5.0:
+                    import os
+                    os.system("sudo shutdown -h now")
+                self.confirm_shutdown = False
+            return True
+        return False
+        
     def render(self, surface):
         pygame.draw.rect(surface, (0, 15, 0), self.rect)
         pygame.draw.rect(surface, (0, 255, 0), self.rect, 1)
@@ -238,6 +261,17 @@ class TelemetryGauges:
         
         txt2 = self.font.render(f"CPU LOAD: {int(self.cpu_load*100)}%", True, (0, 255, 0))
         surface.blit(txt2, (self.rect.x + 10, y + 25))
+        
+        if self.confirm_shutdown and time.time() - self.confirm_time > 5.0:
+            self.confirm_shutdown = False
+            
+        color = (255, 0, 0) if self.confirm_shutdown else (150, 0, 0)
+        pygame.draw.rect(surface, (50, 0, 0), self.shutdown_btn)
+        pygame.draw.rect(surface, color, self.shutdown_btn, 2)
+        
+        btn_text = "CONFIRM SHUTDOWN?" if self.confirm_shutdown else "[ SYSTEM HALT ]"
+        txt3 = self.font.render(btn_text, True, color)
+        surface.blit(txt3, (self.shutdown_btn.centerx - txt3.get_width()//2, self.shutdown_btn.centery - txt3.get_height()//2))
 
 class EffectsWidget:
     def __init__(self, rect, font):

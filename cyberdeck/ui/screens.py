@@ -59,6 +59,8 @@ class IdleScreen(BaseScreen):
     def handle_tap(self, pos):
         if self.active_tab_idx == 3:
             self.fx.handle_tap(pos)
+        elif self.active_tab_idx == 2:
+            self.gauges.handle_tap(pos)
         elif self.active_tab_idx == 1:
             self.netmap.handle_tap(pos)
             
