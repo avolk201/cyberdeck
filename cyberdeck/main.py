@@ -1,5 +1,12 @@
+import os
 import sys
 import pygame
+
+# Detect if we are running without a window manager (e.g., at boot, via systemd, or SSH)
+if not os.environ.get("DISPLAY") and not os.environ.get("WAYLAND_DISPLAY"):
+    print("No display environment variable found. Defaulting to KMSDRM for direct rendering.")
+    os.environ.setdefault("SDL_VIDEODRIVER", "kmsdrm")
+
 from .config import RESOLUTION, FPS, State
 from .fsm import CyberdeckFSM
 from .hw.pixels import PixelController
@@ -49,7 +56,17 @@ class GestureRecognizer:
                 self.on_tap(click_pos)
 
 def main():
-    pygame.init()
+    try:
+        pygame.init()
+    except pygame.error as e:
+        print(f"Failed to initialize pygame: {e}")
+        if os.environ.get("SDL_VIDEODRIVER") == "kmsdrm":
+            print("KMSDRM failed. Falling back to X11...")
+            os.environ["SDL_VIDEODRIVER"] = "x11"
+            pygame.init()
+        else:
+            raise
+
     pygame.font.init()
     screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
     pygame.display.set_caption("Cyberdeck OS")

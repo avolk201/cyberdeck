@@ -1,0 +1,19 @@
+[Unit]
+Description=Cyberdeck OS Kiosk
+After=network.target graphical.target plymouth-quit-wait.service
+
+[Service]
+Type=simple
+User=alana
+WorkingDirectory=/home/alana/cyberdeck
+# Use KMSDRM to render directly to screen without a window manager
+Environment="SDL_VIDEODRIVER=kmsdrm"
+Environment="SDL_AUDIODRIVER=alsa"
+ExecStart=/usr/bin/python3 -m cyberdeck.main
+Restart=on-failure
+RestartSec=5
+# Ensure the user has hardware access groups
+SupplementaryGroups=tty video input dialout gpio i2c
+
+[Install]
+WantedBy=multi-user.target
