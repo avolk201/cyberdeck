@@ -175,7 +175,7 @@ class RunningScreen(BaseScreen):
         self.last_qte_time = 0
         
     def _spawn_qte(self):
-        qte_types = ["swipe_left", "swipe_right", "swipe_down", "long_touch", "tap", "turn_dial", "press_button"]
+        qte_types = ["swipe_left", "swipe_right", "swipe_down", "long_touch", "tap", "press_button"]
         qte_type = random.choice(qte_types)
         prompt = ""
         rect = None
@@ -190,8 +190,6 @@ class RunningScreen(BaseScreen):
         elif qte_type == "tap":
             prompt = "TAP TARGET"
             rect = pygame.Rect(random.randint(50, RESOLUTION[0]-150), random.randint(50, RESOLUTION[1]-150), 100, 100)
-        elif qte_type == "turn_dial":
-            prompt = "( TURN DIAL )"
         elif qte_type == "press_button":
             prompt = "[ PRESS BUTTON ]"
             
@@ -216,9 +214,17 @@ class RunningScreen(BaseScreen):
     def handle_swipe_right(self): self._resolve_qte("swipe_right")
     def handle_swipe_down(self): self._resolve_qte("swipe_down")
     def handle_long_touch(self): self._resolve_qte("long_touch")
-    def handle_tap(self, pos): self._resolve_qte("tap", pos)
-    def handle_enc(self, dir): self._resolve_qte("turn_dial")
-    def handle_short_press(self): self._resolve_qte("press_button")
+    def handle_tap(self, pos): 
+        if self.progress >= 100:
+            self.end_time = 0
+        else:
+            self._resolve_qte("tap", pos)
+            
+    def handle_short_press(self): 
+        if self.progress >= 100:
+            self.end_time = 0
+        else:
+            self._resolve_qte("press_button")
         
     def update(self):
         if self.start_time is None:

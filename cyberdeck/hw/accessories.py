@@ -10,23 +10,35 @@ class NanoAccessories:
         self.callback = callback
         self.running = True
         if not IS_MOCK:
-            self._find_nodes()
+            t = threading.Thread(target=self._monitor_ports, daemon=True)
+            t.start()
 
-    def _find_nodes(self):
-        ports = serial.tools.list_ports.comports()
-        for p in ports:
-            if "Arduino" in p.description or "Nano" in p.description or "USB" in p.description:
-                try:
-                    s = serial.Serial(p.device, NANO_BAUD, timeout=1)
-                    self.nodes.append(s)
-                    print(f"Found Nano node on {p.device}")
+    def _monitor_ports(self):
+        import time
+        while self.running:
+            ports = serial.tools.list_ports.comports()
+            available_devices = [p.device for p in ports if "Arduino" in p.description or "Nano" in p.description or "USB" in p.description]
+            
+            with self.lock:
+                dead_nodes = [n for n in self.nodes if n.port not in available_devices or not n.is_open]
+                for node in dead_nodes:
+                    self.nodes.remove(node)
+                    try: node.close()
+                    except: pass
+                    print(f"Nano node disconnected: {node.port}")
                     
-                    t = threading.Thread(target=self._listen, args=(s,), daemon=True)
-                    t.start()
-                except serial.SerialException as e:
-                    print(f"Failed to open {p.device}: {e}")
-        if not self.nodes:
-            print("No Nano nodes found.")
+                connected_ports = [n.port for n in self.nodes]
+                for dev in available_devices:
+                    if dev not in connected_ports:
+                        try:
+                            s = serial.Serial(dev, NANO_BAUD, timeout=1)
+                            self.nodes.append(s)
+                            print(f"Found new Nano node on {dev}")
+                            t = threading.Thread(target=self._listen, args=(s,), daemon=True)
+                            t.start()
+                        except serial.SerialException as e:
+                            pass
+            time.sleep(2.0)
             
     def _listen(self, node):
         while self.running:
@@ -41,6 +53,8 @@ class NanoAccessories:
                             print(f"Nano: {data}")
             except Exception as e:
                 print(f"Nano listen error: {e}")
+                try: node.close()
+                except: pass
                 break
 
     def broadcast(self, state):

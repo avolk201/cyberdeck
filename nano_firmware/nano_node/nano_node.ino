@@ -4,8 +4,15 @@
 #include <Adafruit_SSD1306.h>
 
 #define NODE_ID 1
-#define PIN_LEDS 6
-#define NUM_LEDS 12
+#define PIN_LEDS_STRIP 6
+#define NUM_LEDS_STRIP 10 // Temporarily reduced from 120 to save RAM until you get the strip!
+
+#define PIN_LEDS_MATRIX 7
+#define NUM_LEDS_MATRIX 64
+
+#define PIN_SWITCH 12
+#define PIN_HR_SENSOR A0
+
 #define MAX_MA 500
 #define MA_PER_PX 60
 
@@ -14,33 +21,43 @@
 #define OLED_RESET -1
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-Adafruit_NeoPixel strip(NUM_LEDS, PIN_LEDS, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip(NUM_LEDS_STRIP, PIN_LEDS_STRIP, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel matrix(NUM_LEDS_MATRIX, PIN_LEDS_MATRIX, NEO_GRB + NEO_KHZ800);
 
 String currentState = "BOOT";
 int masterBrightness = 255;
 unsigned long lastComms = 0;
+bool oledConnected = false;
 
 void setup() {
   Serial.begin(115200);
   
-  pinMode(2, INPUT_PULLUP);
-  pinMode(A0, INPUT);
+  pinMode(PIN_SWITCH, INPUT); 
+  pinMode(PIN_HR_SENSOR, INPUT);
   
+  // Initialize OLED FIRST to ensure it gets its massive 1KB memory chunk
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println(F("SSD1306 allocation failed or disconnected"));
+    oledConnected = false;
+  } else {
+    oledConnected = true;
+    display.clearDisplay();
+    display.setTextSize(2);
+    display.setTextColor(SSD1306_WHITE);
+    display.setCursor(0, 0);
+    display.println("BOOTING...");
+    display.display();
+  }
+
   strip.begin();
   strip.show();
-
-  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
-    Serial.println(F("SSD1306 allocation failed"));
-  }
-  display.clearDisplay();
-  display.setTextSize(2);
-  display.setTextColor(SSD1306_WHITE);
-  display.setCursor(0, 0);
-  display.println("BOOTING...");
-  display.display();
+  
+  matrix.begin();
+  matrix.show();
 }
 
 void updateOLED() {
+  if (!oledConnected) return;
   display.clearDisplay();
   
   // Header
@@ -111,8 +128,8 @@ void loop() {
 
   static unsigned long lastSensorUpdate = 0;
   if (millis() - lastSensorUpdate > 100) {
-    int hrVal = analogRead(A0);
-    int swVal = digitalRead(2);
+    int hrVal = analogRead(PIN_HR_SENSOR);
+    int swVal = digitalRead(PIN_SWITCH);
     Serial.print("HR "); Serial.println(hrVal);
     Serial.print("SW "); Serial.println(swVal);
     lastSensorUpdate = millis();
@@ -121,21 +138,30 @@ void loop() {
   // Very basic LED effects
   if (currentState == "BOOT") {
     strip.fill(strip.Color(0, 50, 0));
+    matrix.fill(matrix.Color(0, 50, 0));
   } else if (currentState == "IDLE") {
     strip.fill(strip.Color(0, 10, 0));
+    matrix.fill(matrix.Color(0, 10, 0));
   } else if (currentState == "ALERT") {
     if ((millis() / 100) % 2 == 0) {
       strip.fill(strip.Color(255, 0, 0));
+      matrix.fill(matrix.Color(255, 0, 0));
     } else {
       strip.fill(strip.Color(0, 0, 0));
+      matrix.fill(matrix.Color(0, 0, 0));
     }
   } else if (currentState == "BLACKOUT") {
     strip.fill(strip.Color(0, 0, 0));
+    matrix.fill(matrix.Color(0, 0, 0));
   } else {
     strip.fill(strip.Color(0, 20, 20));
+    matrix.fill(matrix.Color(0, 20, 20));
   }
 
   strip.setBrightness(masterBrightness);
   strip.show();
+  
+  matrix.setBrightness(masterBrightness);
+  matrix.show();
   delay(20);
 }

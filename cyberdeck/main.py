@@ -129,15 +129,6 @@ def main():
 
     fsm.register_listener(on_state_change)
     
-    def on_enc(dir):
-        current_screen = get_screen_for_state(fsm.state, screen)
-        if hasattr(current_screen, 'handle_enc'):
-            current_screen.handle_enc(dir)
-        elif fsm.state == State.IDLE:
-            if dir > 0:
-                current_screen.next_tab()
-            else:
-                current_screen.prev_tab()
 
     def on_short_press():
         current_screen = get_screen_for_state(fsm.state, screen)
@@ -145,16 +136,15 @@ def main():
             current_screen.handle_short_press()
         elif fsm.state == State.BOOT:
             fsm.boot_complete()
-        else:
+        elif fsm.state == State.BLACKOUT:
+            fsm.wake_from_blackout()
+        elif fsm.state != State.RUNNING:
             fsm.transition(State.RUNNING)
 
     def on_long_press():
         fsm.trigger_blackout()
         
     def on_left_press():
-        fsm.trigger_alert()
-        
-    def on_right_press():
         from . import config
         fx_list = ["PULSE", "MATRIX", "CHASE", "STROBE", "MATRIX_SKULL", "MATRIX_RADAR"]
         current = getattr(config, "ACTIVE_FX", "PULSE")
@@ -163,10 +153,16 @@ def main():
         else:
             config.ACTIVE_FX = fx_list[0]
         
+    def on_right_press():
+        fsm.trigger_alert()
+        
     def on_double_press():
         fsm.trigger_scan()
+        
+    def on_chord_press():
+        fsm.transition(State.IDLE)
 
-    nav_btns = NavButtons(on_left_press, on_right_press, on_short_press, on_long_press, on_double_press)
+    nav_btns = NavButtons(on_left_press, on_right_press, on_short_press, on_long_press, on_double_press, on_chord=on_chord_press)
 
     def handle_tap(pos):
         current_screen = get_screen_for_state(fsm.state, screen)
@@ -223,7 +219,7 @@ def main():
                 elif event.key == pygame.K_b:
                     on_long_press()
                 elif event.key == pygame.K_RIGHT:
-                    on_enc(1)
+                    on_right_press()
                 elif event.key == pygame.K_a:
                     on_double_press()
             elif event.type in [pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP]:
