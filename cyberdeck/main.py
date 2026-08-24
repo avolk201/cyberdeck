@@ -134,7 +134,10 @@ def main():
         if hasattr(current_screen, 'handle_enc'):
             current_screen.handle_enc(dir)
         elif fsm.state == State.IDLE:
-            fsm.trigger_scan()
+            if dir > 0:
+                current_screen.next_tab()
+            else:
+                current_screen.prev_tab()
 
     def on_short_press():
         current_screen = get_screen_for_state(fsm.state, screen)
@@ -142,26 +145,26 @@ def main():
             current_screen.handle_short_press()
         elif fsm.state == State.BOOT:
             fsm.boot_complete()
-        elif fsm.state == State.SCANNING:
-            fsm.trigger_run()
-        elif fsm.state == State.ALERT:
-            fsm.resolve_alert()
-        elif fsm.state == State.COOLDOWN:
-            fsm.cooldown_complete()
-        elif fsm.state == State.BLACKOUT:
-            fsm.wake_from_blackout()
+        else:
+            fsm.transition(State.RUNNING)
 
     def on_long_press():
         fsm.trigger_blackout()
         
     def on_left_press():
-        on_enc(-1)
+        fsm.trigger_alert()
         
     def on_right_press():
-        on_enc(1)
+        from . import config
+        fx_list = ["PULSE", "MATRIX", "CHASE", "STROBE", "MATRIX_SKULL", "MATRIX_RADAR"]
+        current = getattr(config, "ACTIVE_FX", "PULSE")
+        if current in fx_list:
+            config.ACTIVE_FX = fx_list[(fx_list.index(current) + 1) % len(fx_list)]
+        else:
+            config.ACTIVE_FX = fx_list[0]
         
     def on_double_press():
-        fsm.trigger_alert()
+        fsm.trigger_scan()
 
     nav_btns = NavButtons(on_left_press, on_right_press, on_short_press, on_long_press, on_double_press)
 
