@@ -9,6 +9,7 @@ WorkingDirectory=/home/alana/cyberdeck
 Environment="DISPLAY=:0"
 Environment="SDL_AUDIODRIVER=alsa"
 # Start X server on VT7 without a cursor
+ExecStartPre=-/usr/sbin/iwconfig wlan0 power off
 ExecStart=/usr/bin/xinit /usr/bin/python3 -m cyberdeck.main -- :0 vt7 -nocursor -s 0 dpms
 Restart=on-failure
 RestartSec=5

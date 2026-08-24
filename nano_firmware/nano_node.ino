@@ -23,6 +23,9 @@ unsigned long lastComms = 0;
 void setup() {
   Serial.begin(115200);
   
+  pinMode(2, INPUT_PULLUP);
+  pinMode(A0, INPUT);
+  
   strip.begin();
   strip.show();
 
@@ -104,6 +107,15 @@ void loop() {
   if (stateChanged || millis() - lastDisplayUpdate > 1000) {
     updateOLED();
     lastDisplayUpdate = millis();
+  }
+
+  static unsigned long lastSensorUpdate = 0;
+  if (millis() - lastSensorUpdate > 100) {
+    int hrVal = analogRead(A0);
+    int swVal = digitalRead(2);
+    Serial.print("HR "); Serial.println(hrVal);
+    Serial.print("SW "); Serial.println(swVal);
+    lastSensorUpdate = millis();
   }
 
   // Very basic LED effects

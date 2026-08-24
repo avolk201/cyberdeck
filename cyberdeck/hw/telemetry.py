@@ -27,3 +27,31 @@ def get_temp():
         return round(_base_temp + random.uniform(-0.2, 0.2), 1)
     except Exception:
         return 0.0
+
+def get_wifi_status():
+    if IS_MOCK:
+        return "WIFI: LINK 85%"
+    try:
+        with open("/proc/net/wireless", "r") as f:
+            lines = f.readlines()
+            if len(lines) > 2:
+                parts = lines[2].split()
+                if len(parts) >= 3:
+                    link_quality = parts[2].replace('.', '')
+                    return f"WIFI: LINK {link_quality}%"
+        return "WIFI: OFFLINE"
+    except Exception:
+        return "WIFI: OFFLINE"
+
+def get_wifi_ip():
+    if IS_MOCK:
+        return "192.168.1.42"
+    try:
+        import subprocess
+        res = subprocess.check_output(['ip', '-4', 'addr', 'show', 'wlan0']).decode('utf-8')
+        for line in res.split('\n'):
+            if 'inet ' in line:
+                return line.split()[1].split('/')[0]
+        return None
+    except Exception:
+        return None

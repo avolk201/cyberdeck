@@ -14,8 +14,8 @@ import pygame
 from .config import RESOLUTION, FPS, State
 from .fsm import CyberdeckFSM
 from .hw.pixels import PixelController
-from .hw.encoder import Encoder
-from .hw.button import MasterButton
+from .hw.button import NavButtons
+from .hw.power import PowerManager
 from .hw.oled import OledDisplay
 from .hw.accessories import NanoAccessories
 from .ui.screens import get_screen_for_state
@@ -106,7 +106,22 @@ def main():
 
     pixels = PixelController()
     oled = OledDisplay()
-    accessories = NanoAccessories()
+
+    def on_nano_data(data):
+        from . import config
+        print(f"Nano data: {data}")
+        if data.startswith("SW "):
+            try: config.NANO_SW = int(data.split()[1])
+            except: pass
+        elif data.startswith("HR "):
+            try: config.NANO_HR = int(data.split()[1])
+            except: pass
+            
+        import time
+        config.NANO_LAST_SEEN = time.time()
+
+    accessories = NanoAccessories(callback=on_nano_data)
+    power_manager = PowerManager()
 
     def on_state_change(new_state):
         pixels.set_state(new_state)
@@ -139,11 +154,16 @@ def main():
     def on_long_press():
         fsm.trigger_blackout()
         
+    def on_left_press():
+        on_enc(-1)
+        
+    def on_right_press():
+        on_enc(1)
+        
     def on_double_press():
-        fsm.trigger_alert() # test
+        fsm.trigger_alert()
 
-    enc = Encoder(on_enc)
-    btn = MasterButton(on_short_press, on_long_press, on_double_press)
+    nav_btns = NavButtons(on_left_press, on_right_press, on_short_press, on_long_press, on_double_press)
 
     def handle_tap(pos):
         current_screen = get_screen_for_state(fsm.state, screen)
@@ -228,6 +248,7 @@ def main():
 
     pixels.running = False
     oled.running = False
+    accessories.running = False
     pygame.quit()
     sys.exit()
 

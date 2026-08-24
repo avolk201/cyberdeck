@@ -2,7 +2,7 @@ import pygame
 import math
 import time
 import random
-from ..hw.telemetry import get_temp
+from ..hw.telemetry import get_temp, get_wifi_status, get_wifi_ip
 
 BREACH_EVENT = pygame.USEREVENT + 1
 TARGET_LOCK_EVENT = pygame.USEREVENT + 2
@@ -215,6 +215,13 @@ class TelemetryGauges:
         self.target_load = 0.5
         self.last_update = 0
         
+        try:
+            self.suit_img = pygame.image.load("/Users/alanavolkov/.gemini/antigravity-ide/brain/7a4f04a8-a877-43f7-9e30-941fe6d8e0d0/suit_telemetry_icon_1787561907364.jpg")
+            self.suit_img = pygame.transform.scale(self.suit_img, (150, 150))
+        except Exception as e:
+            print("Failed to load suit image:", e)
+            self.suit_img = None
+        
         btn_w = 260
         btn_h = 50
         self.shutdown_btn = pygame.Rect(
@@ -243,10 +250,37 @@ class TelemetryGauges:
         pygame.draw.rect(surface, (0, 255, 0), self.rect, 1)
         
         temp = get_temp()
+        from .. import config
+        hr = config.NANO_HR
+        sw = config.NANO_SW
+        nano_last = config.NANO_LAST_SEEN
+        
+        is_nano_online = time.time() - nano_last < 5.0
         
         y = self.rect.y + 10
+        txt_nano = self.font.render(f"NANO SYS: {'ONLINE' if is_nano_online else 'OFFLINE'}", True, (0, 255, 0) if is_nano_online else (255, 0, 0))
+        surface.blit(txt_nano, (self.rect.x + 10, y))
+        y += 40
+        
         txt = self.font.render(f"SYS TEMP: {temp}C", True, (0, 255, 0))
         surface.blit(txt, (self.rect.x + 10, y))
+        y += 40
+        
+        txt_hr = self.font.render(f"BIO-HR:   {hr} BPM", True, (0, 255, 0) if is_nano_online else (100, 100, 100))
+        surface.blit(txt_hr, (self.rect.x + 10, y))
+        y += 40
+        
+        wifi_status = get_wifi_status()
+        is_wifi_online = "OFFLINE" not in wifi_status
+        color_wifi = (0, 255, 0) if is_wifi_online else (255, 0, 0)
+        
+        if is_wifi_online:
+            ip = get_wifi_ip()
+            if ip:
+                wifi_status += f"  IP: {ip}"
+                
+        txt_wifi = self.font.render(wifi_status, True, color_wifi)
+        surface.blit(txt_wifi, (self.rect.x + 10, y))
         y += 40
         
         now = time.time()
@@ -261,6 +295,15 @@ class TelemetryGauges:
         
         txt2 = self.font.render(f"CPU LOAD: {int(self.cpu_load*100)}%", True, (0, 255, 0))
         surface.blit(txt2, (self.rect.x + 10, y + 25))
+        
+        if sw == 1 and self.suit_img:
+            suit_x = self.rect.right - 160
+            suit_y = self.rect.y + 10
+            surface.blit(self.suit_img, (suit_x, suit_y))
+            pygame.draw.rect(surface, (0, 255, 0), (suit_x, suit_y, 150, 150), 1)
+            
+            txt_suit = self.font.render("SUIT: LINKED", True, (0, 255, 0))
+            surface.blit(txt_suit, (suit_x + 75 - txt_suit.get_width()//2, suit_y + 155))
         
         if self.confirm_shutdown and time.time() - self.confirm_time > 5.0:
             self.confirm_shutdown = False
