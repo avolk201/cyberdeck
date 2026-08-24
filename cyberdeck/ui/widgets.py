@@ -216,7 +216,10 @@ class TelemetryGauges:
         self.last_update = 0
         
         try:
-            self.suit_img = pygame.image.load("/Users/alanavolkov/.gemini/antigravity-ide/brain/7a4f04a8-a877-43f7-9e30-941fe6d8e0d0/suit_telemetry_icon_1787561907364.jpg")
+            import os
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            img_path = os.path.join(base_dir, "assets", "suit_telemetry.jpg")
+            self.suit_img = pygame.image.load(img_path)
             self.suit_img = pygame.transform.scale(self.suit_img, (150, 150))
         except Exception as e:
             print("Failed to load suit image:", e)
