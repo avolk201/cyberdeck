@@ -5,7 +5,7 @@ cat <<EOF > ~/.config/autostart/cyberdeck.desktop
 [Desktop Entry]
 Type=Application
 Name=Cyberdeck OS
-Exec=/usr/bin/python3 /home/alana/cyberdeck/cyberdeck/main.py
+Exec=/usr/bin/python3 /home/alana/cyberdeck/run.py
 WorkingDirectory=/home/alana/cyberdeck
 Terminal=false
 EOF

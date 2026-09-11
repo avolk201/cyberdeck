@@ -99,26 +99,40 @@ cyberdeck/
 ├── config.py          # pins, LED counts, BUDGET_MA, colors, i2c addr, timeouts
 ├── fsm.py             # state machine
 ├── hw/
-│   ├── pixels.py      # ONE rpi_ws281x chain: [0:64]=matrix, [64:]=strip;
-│   │                  #   xy_to_index() serpentine map; effect generators;
-│   │                  #   enforce_budget(); thread-owned
+│   ├── accessories.py # open /dev/serial/by-id/*Nano*; broadcast(state);
+│   │                  #   heartbeat; parse Nano telemetry (HR, SW, MA);
+│   │                  #   flag dead nodes → SYS tile
 │   ├── encoder.py     # gpiozero RotaryEncoder → TICK(dir)
 │   ├── button.py      # gpiozero Button → PRESS / LONG_PRESS(≥1.5s) / DOUBLE
-│   ├── oled.py        # luma.oled, 2 Hz refresh thread, telemetry pages
-│   ├── accessories.py # open /dev/serial/by-id/*Nano*; broadcast(state);
-│   │                  #   heartbeat; flag dead nodes → SYS tile
-│   └── telemetry.py   # vcgencmd temp, uptime, LED mA estimate, node health
+│   ├── wifi_node.py   # ESP32 visor Wi-Fi UDP: state broadcast + OLED streaming
+│   ├── hr.py          # heart-rate monitor (pulse sensor via Nano)
+│   ├── telemetry.py   # vcgencmd temp, uptime, CPU/RAM, Nano mA, battery est
+│   ├── power.py       # battery/power management
+│   └── thermal.py     # thermal guard: normal/warm/critical with hysteresis
 ├── ui/
 │   ├── screens.py     # Boot, HomeDeck, Scan, Run, Alert, Cooldown, Blackout
 │   ├── widgets.py     # terminal feed, netmap, gauges, ≥60px targets
+│   ├── visor_fx.py    # ESP32 visor OLED effects (15 modes)
+│   ├── hud_effects.py # CRT scanlines, corner reticles, glitch triggers
 │   └── glitch.py      # RGB-split / tear / noise overlays
 └── services/
+    ├── audio.py       # sound effects engine
+    ├── wifi.py        # VISOR_LINK SoftAP connection management
     ├── netmon.py      # background real `iw` scans → "nodes detected"
     └── loggen.py      # fake terminal traffic + real telemetry sprinkles
 ```
 
-**Threads:** UI main (pygame) · pixels (sole owner of chain) · OLED 2 Hz · netmon.
-FSM publishes state → pixel thread + `accessories.broadcast()`.
+**ESP32 Visor (Wi-Fi bridge):**
+```
+esp32_firmware/esp32_visor/
+└── esp32_visor.ino    # SoftAP + dual SSD1306 I2C OLEDs + 2× NeoPixel red LEDs
+```
+Pi streams 128×64 XBM frames over UDP (30 fps); ESP32 runs state-aware
+Maelstrom-red NeoPixel eyes (GPIO 4, breathing/blink/blackout modes) and streams
+live power telemetry (`PWR <mA>`) back to the Pi over UDP for energy analytics.
+
+**Threads:** UI main (pygame) · OLED 2 Hz · netmon · Nano serial listener.
+FSM publishes state → `accessories.broadcast()` + `wifi_node.send_state()`.
 
 **State machine:**
 | State | Enter via | Touchscreen | 8×8 | Strip | Nanos |

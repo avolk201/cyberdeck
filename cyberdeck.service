@@ -1,16 +1,23 @@
 [Unit]
-Description=Cyberdeck OS X11 Kiosk
+Description=Cyberdeck OS X11 Kiosk (supervised, crash-resilient)
 After=network.target graphical.target plymouth-quit-wait.service systemd-user-sessions.service
+# If the supervisor itself keeps failing, stop hammering the boot loop.
+StartLimitIntervalSec=300
+StartLimitBurst=5
 
 [Service]
 Type=simple
 User=alana
 WorkingDirectory=/home/alana/cyberdeck
 Environment="DISPLAY=:0"
-Environment="SDL_AUDIODRIVER=alsa"
-# Start X server on VT7 without a cursor
+# run.py is the supervisor: it keeps X alive and respawns the deck OS on
+# crash or hang (heartbeat watchdog), so a single app failure never blanks the
+# wearer's screen for more than a moment.
 ExecStartPre=-/usr/sbin/iwconfig wlan0 power off
-ExecStart=/usr/bin/xinit /usr/bin/python3 -m cyberdeck.main -- :0 vt7 -nocursor -s 0 dpms
+ExecStart=/usr/bin/xinit /usr/bin/python3 /home/alana/cyberdeck/run.py -- :0 vt7 -nocursor -s 0 dpms
+# Backstop: if the supervisor itself exits non-zero (e.g. its restart circuit
+# breaker opened), systemd relaunches the whole stack as a full reset. A clean
+# exit (code 0, wearer-initiated halt) is NOT restarted.
 Restart=on-failure
 RestartSec=5
 SupplementaryGroups=tty video input dialout gpio i2c
